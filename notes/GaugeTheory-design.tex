@@ -133,4 +133,16 @@ In the order they should be removed:
 \end{enumerate}
 Steps 1 and 2 are cleanup; 3 and 4 change shared conventions and need their owners.
 
+\section{Progress}
+
+\new{Kept up to date as the layers are reorganised. Each entry says what was changed and what the layer now is, so that a reviewer can check the commits against the intent above.}
+
+\subsection*{\new{\lean{LocalGaugeData/} (24 September 2026, 8 commits for PR \#1415)}}
+
+\new{\emph{Changed.} The layer imported matter in two ways; both are gone. The factor types \lean{U1Factor}, \lean{SUFactor}, \lean{Factor}, \lean{Factors} moved down from the matrix-representation and table files into a new \lean{Factor.lean}, since their fields mention only gauge jets, the gauge algebra and the jet ring. \lean{TransformsIn} and \lean{InfinitesimalAction}, which are statements about a representation on $\mathtt{JetRing}\otimes V$, moved up to \lean{MatterField/}. The carriers of a list of factors were renamed from \lean{Factors.G} to \lean{OfFactors.G}, so that \lean{Factors} names only the type. The duplication between \lean{U1.lean} and \lean{SU/Basic.lean} was removed by a new \lean{MatrixJets.lean}: a presentation of gauge jets by matrices of jets (injective maps of the four carriers into $\kappa\times\kappa$ matrices, and what each structure map is in matrices), from which the laws of \lean{LocalGaugeData}, faithfulness and the canonical \lean{SU}-type factor are proved once. \lean{su n} and \lean{u1} are now instances, \lean{u1} reading a scalar as a $1\times1$ matrix. Eight lemmas referenced nowhere, a stale TODO and a helper definition were removed, and the TODO on the recursive carriers was replaced by the reason for the recursion.}
+
+\new{\emph{Now.} Eleven files, about 3\,500 lines, importing nothing outside the layer. \lean{Basic} (the structure, its laws, the iterated derivative, \lean{Faithful}); \lean{AdjointCoeff} (the Taylor--Leibniz theorem); \lean{MaurerCartan} (the symmetrised form and what determines the form); \lean{Truncation} (the filtration, pure jets, \lean{Free}); \lean{Factor} (the factor types); \lean{MatrixJets} (the presentation by matrices); \lean{SU/Algebra}, \lean{SU/Basic}, \lean{U1} (the concrete packages as instances); \lean{Prod} (products and lifting factors); \lean{OfFactors} (a list of factor symbols, its carriers and canonical factors).}
+
+\new{\emph{Not done.} \lean{U1.lean} and \lean{SU/Basic.lean} still each define their structure maps by hand (about 150 lines each); a further step would define the carriers themselves as subtypes of matrices and take the maps from \lean{MatrixJets}, but that changes the carrier types the Standard Model files unfold to, so it waits for the hand-built Standard Model code to go.}
+
 \end{document}
