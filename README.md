@@ -25,7 +25,7 @@ make            # builds every notes/*.tex into notes/*.pdf
 ```
 
 or `tectonic notes/GaugeTheory-design.tex` directly. XeLaTeX or LuaLaTeX also
-work. The PDFs are committed so that nothing has to be built to read them.
+work. The PDFs are committed so that nothing has to be built to read them. If GitHub's preview does not display one, use the raw file: [GaugeTheory-design.pdf](https://github.com/doxtor6/physlib-gaugetheory-design/raw/main/notes/GaugeTheory-design.pdf).
 
 ## License
 
