@@ -91,15 +91,33 @@ Each layer is described below by its datum, what it derives, its instances and i
 \begingroup\color{blue!65!black}
 \subsection{\texttt{LocalGaugeData/}: the gauge datum}
 
-\paragraph{Datum.} \lean{LocalGaugeData G₀ }$\mathfrak g$\lean{ GJ }$\mathfrak g$\lean{J}: a gauge group, its Lie algebra, and their jets, with evaluation and constants, commuting derivatives and coordinates on $\mathfrak g_J$, the adjoint action, and the Maurer--Cartan form $\omega_\mu(U)=i(\partial_\mu U)U^{-1}$ with its cocycle, flatness and Leibniz laws. These are exactly what the field transformation laws use. $\omega$ is a field, not a construction, since the laws fix it only up to the centre of $\mathfrak g_J$.
+\paragraph{The question it answers.} A Lagrangian density at a point $x$ depends on the fields and finitely many of their derivatives at $x$. So when we ask whether it is gauge invariant, a gauge transformation $g(x)$ matters only through its Taylor series at that point, its \emph{jet}. This layer describes these jets and nothing else. It does not mention fields or Lagrangians; every later layer takes its datum as input.
 
-\paragraph{Derived from the laws.} The Taylor--Leibniz theorem for the adjoint coefficients $\partial_x(\mathrm{Ad}_U)|_0$; the symmetrised Maurer--Cartan form, whose base-point data determine $\omega$; the truncation filtration by normal subgroups, with pure jets as its zeroth term.
+\paragraph{An example first.} For $U(1)$, a gauge transformation is $u(x)=e^{i\theta(x)}$. Its jet is the power series of $u$ in the coordinates $x_0,\dots,x_3$, a unitary element of $\mathbb C[[x]]$. Its value at the base point is $u(0)\in U(1)$. Its \emph{Maurer--Cartan form} $\omega_\mu=i(\partial_\mu u)u^{-1}=-\partial_\mu\theta$ is exactly the shift of the gauge field, $A_\mu\mapsto A_\mu+\omega_\mu$. For $SU(n)$ everything is the same with $n\times n$ matrices of power series, and $\omega_\mu=i(\partial_\mu U)U^{-1}$ is a traceless hermitian matrix.
 
-\paragraph{Properties.} \lean{Faithful}: jets are determined by their Taylor data. \lean{Free}: every Taylor family is realised, so the symmetrised Maurer--Cartan data are free coordinates on pure jets. \lean{Free} is what shows the connection enters invariants only through the field strength.
+\paragraph{The datum.} \lean{LocalGaugeData G₀ }$\mathfrak g$\lean{ GJ }$\mathfrak g$\lean{J} abstracts the example. It has four types: the gauge group $G_0$ and its Lie algebra $\mathfrak g$, and their jet versions $G_J$ and $\mathfrak g_J$. It has the maps a transformation law uses:
+\begin{itemize}
+\item evaluation at the base point and constant jets, $G_J\leftrightarrows G_0$ and $\mathfrak g_J\leftrightarrows\mathfrak g$;
+\item derivatives $\partial_\mu$ and multiplication by coordinates $x_\mu$ on $\mathfrak g_J$;
+\item the adjoint action $\mathrm{Ad}_U$ of a gauge jet on Lie algebra jets;
+\item the Maurer--Cartan form $\omega_\mu(U)$.
+\end{itemize}
+It also has the rules these satisfy in the example, such as $\omega(UV)=\omega(U)+\mathrm{Ad}_U\,\omega(V)$ and $\partial_\mu\omega_\nu-\partial_\nu\omega_\mu+[\omega_\mu,\omega_\nu]=0$. Everything later is proved from these rules alone, so it holds for every gauge group at once.
 
-\paragraph{Instances.} A matrix presentation (\lean{MatrixJets}) proves the laws, \lean{Faithful}, a criterion for \lean{Free} and the canonical factor once; \lean{su n} and \lean{u1} are instances. \lean{prod} and \lean{ofFactors} build products and a model's gauge group from a list like \lean{[.SU 3, .SU 2, .U1]}.
+\paragraph{What is proved from the rules.} Three tools that later layers need:
+\begin{itemize}
+\item how $\mathrm{Ad}_U$ acts on Taylor coefficients (a Leibniz formula), which is how a gauge jet moves the derivatives of a field;
+\item the \emph{symmetrised} Maurer--Cartan data, a smaller set of numbers from which all Taylor coefficients of $\omega$ can be recovered;
+\item the jets that agree with the identity up to order $n$; these form normal subgroups, and such a jet only shifts the first $n$ derivatives of the gauge field.
+\end{itemize}
 
-\paragraph{Interface.} A factor (\lean{U1Factor}, \lean{SUFactor}) is a compatible projection onto $U(1)$ or $SU(n)$; a model's charges are given factor by factor. The datum is passed explicitly, never inferred, and the layer imports nothing above it.
+\paragraph{Two extra properties.} The rules do not say that $G_J$ really consists of Taylor series, so two properties are stated separately. \lean{Faithful}: a jet is determined by its Taylor coefficients. \lean{Free}: every choice of Taylor coefficients comes from some jet. \lean{Free} is what later shows that the gauge field enters an invariant only through its field strength: gauge jets are rich enough to remove every other combination of derivatives of $A_\mu$.
+
+\paragraph{Where concrete groups come from.} A \emph{matrix presentation} (\lean{MatrixJets}) says that the four types sit inside matrices and every map is the matrix one. From it the rules, \lean{Faithful} and a test for \lean{Free} are proved once, so $SU(n)$ (\lean{su n}) and $U(1)$ (\lean{u1}, as $1\times1$ matrices) are obtained by filling in a presentation. Products (\lean{prod}) and a list of factors (\lean{ofFactors}) then give any group such as $SU(3)\times SU(2)\times U(1)$, written \lean{[.SU 3, .SU 2, .U1]}.
+
+\paragraph{Factors and morphisms.} Charges are given one factor at a time, for example ``a doublet of $SU(2)$ with hypercharge $-3$''. A \emph{factor} (\lean{U1Factor}, \lean{SUFactor}) records how the gauge jets project onto one $U(1)$ or $SU(n)$. A \emph{morphism} (\lean{Hom}) is a map between two data that respects all the maps above, and a factor of the target pulls back along it. The projections of a product are morphisms, which is how the factors of $SU(3)\times SU(2)\times U(1)$ are obtained from those of its pieces.
+
+\paragraph{Conventions.} The datum is always passed explicitly, never found by instance search, because the four types do not determine it. The layer imports nothing from the layers above it.
 \endgroup
 
 \section{What a model sees}
