@@ -86,62 +86,20 @@ Imports go down the line only. Each layer exposes one structure as its datum, \l
 \item \new{\textbf{One classification mechanism.} The relation \lean{ReducesInvariantsTo} of \lean{Mathematics/InvariantReduction} is general mathematics and stays there. The algebra layer supplies what every theory needs to use it: the gauge and Lorentz actions as one family indexed by $G_0\sqcup SL(2,\mathbb C)$, the reduction of a factor's invariance to that family, and the stability of symbol ranges. A classification theorem for one index law (a colour trace, an isospin contraction, a Lorentz scalar) is stated as a reduction modulo an arbitrary stable submodule, so it can be applied inside any larger expression and to any extension.}
 \end{itemize}
 
-The subsections below describe each layer in detail: its datum, what it derives from that datum, the concrete instances it provides, and the choices behind its shape.
+Each layer is described below by its datum, what it derives, its instances and its interface.
 
 \begingroup\color{blue!65!black}
 \subsection{\texttt{LocalGaugeData/}: the gauge datum}
 
-\paragraph{Role.} A local Lagrangian sees a gauge transformation $g(x)$ only through its jet at the base point. This layer says, once and for all gauge groups, what structure of those jets the rest of the library may use. Nothing in it mentions matter, a field content or an algebra of symbols; every other layer takes a term of its structure as an argument.
+\paragraph{Datum.} \lean{LocalGaugeData G₀ }$\mathfrak g$\lean{ GJ }$\mathfrak g$\lean{J}: a gauge group, its Lie algebra, and their jets, with evaluation and constants, commuting derivatives and coordinates on $\mathfrak g_J$, the adjoint action, and the Maurer--Cartan form $\omega_\mu(U)=i(\partial_\mu U)U^{-1}$ with its cocycle, flatness and Leibniz laws. These are exactly what the field transformation laws use. $\omega$ is a field, not a construction, since the laws fix it only up to the centre of $\mathfrak g_J$.
 
-\paragraph{The datum.} \lean{LocalGaugeData G₀ }$\mathfrak g$\lean{ GJ }$\mathfrak g$\lean{J} has four carriers: the gauge group $G_0$, its Lie algebra $\mathfrak g$, the group $G_J$ of jets of gauge transformations and the Lie algebra $\mathfrak g_J$ of jets of Lie algebra elements. Its maps and laws are exactly those that the transformation laws of fields use:
-\begin{itemize}
-\item evaluation at the base point and inclusion of constants, on the group ($\mathrm{eval}$, $\mathrm{ofConstant}$) and on the Lie algebra ($\mathrm{evalLie}$, $\mathrm{ofConstantLie}$), with $\mathrm{eval}\circ\mathrm{ofConstant}=\mathrm{id}$;
-\item commuting formal derivatives $\partial_\mu$ on $\mathfrak g_J$, derivations of the bracket that kill constants, and multiplication by the coordinates $x_\mu$, with $\partial_\mu(x_\nu a)=x_\nu\partial_\mu a+\delta_{\mu\nu}a$;
-\item the adjoint action of $G_J$ on $\mathfrak g_J$ by Lie automorphisms, evaluating to the adjoint action of $G_0$ on $\mathfrak g$;
-\item the Maurer--Cartan form $\omega_\mu(U)=i(\partial_\mu U)U^{-1}$, zero on constants, with the cocycle law $\omega(UV)=\omega(U)+\mathrm{Ad}_U\,\omega(V)$, the flatness equation $\partial_\mu\omega_\nu-\partial_\nu\omega_\mu+[\omega_\mu,\omega_\nu]=0$ and the Leibniz rule $\partial_\mu(\mathrm{Ad}_U x)=\mathrm{Ad}_U\partial_\mu x-[\omega_\mu,\mathrm{Ad}_U x]$.
-\end{itemize}
-The Maurer--Cartan form is a field of the structure rather than a construction: the Leibniz rule determines it only up to the centre of $\mathfrak g_J$, which is nonzero whenever there is a $U(1)$ factor (\lean{maurerCartan_eq_of_deriv_adjoint}).
+\paragraph{Derived from the laws.} The Taylor--Leibniz theorem for the adjoint coefficients $\partial_x(\mathrm{Ad}_U)|_0$; the symmetrised Maurer--Cartan form, whose base-point data determine $\omega$; the truncation filtration by normal subgroups, with pure jets as its zeroth term.
 
-\paragraph{What follows from the laws alone.} Three developments use nothing but the structure, so they hold for every gauge group at once.
-\begin{itemize}
-\item \emph{Adjoint Taylor coefficients} (\lean{AdjointCoeff}). The coefficient $\partial_x(\mathrm{Ad}_U)|_0$, a linear map on $\mathfrak g$, is what the gauge-field law sees of $\mathrm{Ad}_U$ after $x$ derivatives. The Taylor--Leibniz theorem says the Taylor data of $\mathrm{Ad}_U Y$ are the antidiagonal convolution of those of $\mathrm{Ad}_U$ and of $Y$; for matrices it is the Leibniz rule, here it is derived from the single-derivative law by induction. The coefficients are multiplicative up to convolution.
-\item \emph{The symmetrised Maurer--Cartan form} (\lean{MaurerCartan}). $\bar\omega_r=\frac1{|r|}\sum_{\mu\in r}\partial_{r-\mu}\,\omega_\mu$ averages over which direction is carried by the form. Flatness makes every $\partial_s\omega_\mu$ equal to $\bar\omega_{\mu::s}$ plus brackets in fewer directions, so the symmetrised base-point data determine all base-point Taylor data of $\omega$.
-\item \emph{The truncation filtration} (\lean{Truncation}). A jet is trivial to order $n$ when its value is $1$ and the Taylor data of $\omega$ vanish below order $n$. These form normal subgroups; the zeroth are the pure jets, and every jet is a pure jet times the constant jet of its value. A jet trivial to order $n$ acts on the connection symbols with at most $n$ derivatives by a pure translation.
-\end{itemize}
+\paragraph{Properties.} \lean{Faithful}: jets are determined by their Taylor data. \lean{Free}: every Taylor family is realised, so the symmetrised Maurer--Cartan data are free coordinates on pure jets. \lean{Free} is what shows the connection enters invariants only through the field strength.
 
-\paragraph{The two properties.} Two facts true of every honest jet group do not follow from the laws, and are separate classes:
-\begin{itemize}
-\item \lean{Faithful}: a Lie algebra jet is determined by its base-point Taylor data, and a jet with vanishing Maurer--Cartan form is constant;
-\item \lean{Free} (extends \lean{Faithful}): every family of Taylor data in $\mathfrak g$ is realised by a Lie algebra jet, and every $\rho\in\mathfrak g_J$ vanishing at the base point is the radial component $\sum_\mu x_\mu\omega_\mu(U)$ of some pure jet.
-\end{itemize}
-\lean{Free} makes the symmetrised Maurer--Cartan data free coordinates on the pure jets. It is what the gauge-boson layer needs to show that gauge invariance forbids symmetrised derivatives of the connection, i.e.\ that the connection enters invariants only through the field strength.
+\paragraph{Instances.} A matrix presentation (\lean{MatrixJets}) proves the laws, \lean{Faithful}, a criterion for \lean{Free} and the canonical factor once; \lean{su n} and \lean{u1} are instances. \lean{prod} and \lean{ofFactors} build products and a model's gauge group from a list like \lean{[.SU 3, .SU 2, .U1]}.
 
-\paragraph{Concrete packages.} All concrete gauge data are built by three constructions.
-\begin{itemize}
-\item \emph{Matrix presentations} (\lean{MatrixJets}). A presentation gives injective maps of the four carriers into $\kappa\times\kappa$ matrices (of $\mathbb C$ or of jets) and says that each structure map is the matrix one: entrywise constant coefficient and constants, entrywise derivative and coordinate, conjugation $U a U^\dagger$ for the adjoint actions, $i(\partial_\mu U)U^\dagger$ for $\omega$. From it the laws, \lean{Faithful}, a criterion for \lean{Free} and the canonical $SU$-type factor are proved once, from matrix identities over the jet ring. \lean{su n} (special unitary matrices of jets, traceless hermitian Lie algebra) and \lean{u1} (unitary scalars read as $1\times1$ matrices) are instances; a $U(n)$ or $SO(n)$ package would only supply its structure maps.
-\item \emph{Products} (\lean{Prod}). Every map and law acts componentwise; \lean{Faithful} and \lean{Free} pass to products.
-\item \emph{Lists of factors} (\lean{OfFactors}). A model names its gauge group by a list such as \lean{[.SU 3, .SU 2, .U1]}; \lean{ofFactors} is the product of the packages in that order, and it is free. Its carriers are written by recursion so that they unfold to the literal product $\mathrm{JetSU}\,3\times\mathrm{JetSU}\,2\times\mathrm{JetU1}$.
-\end{itemize}
-
-\paragraph{Factors.} A \emph{factor} of a datum is a projection onto $U(1)$ or $SU(n)$ that is compatible with the structure: a unitary (matrix of) jets $u(U)$ for each gauge jet, with matching components $\varphi$, $\varphi_J$ on the Lie algebras, related by $\varphi_J(\omega_\mu U)=i(\partial_\mu u)u^{-1}$ and by the adjoint action (\lean{U1Factor}, \lean{SUFactor}). A gauge group presented by its factors is a list \lean{Factors jets}. Factors are the interface to the next layer: the charges of a species are given factor by factor, and the representation they name (a charge twist, a fundamental) is built there. \lean{ofFactors} comes with its canonical factors.
-
-\paragraph{Files.}
-\begin{center}\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-\lean{Basic} & the structure, first consequences, iterated derivative, \lean{Faithful} \\
-\lean{AdjointCoeff} & adjoint Taylor coefficients, the Taylor--Leibniz theorem \\
-\lean{MaurerCartan} & the symmetrised form; symmetrised data determine $\omega$ \\
-\lean{Truncation} & the filtration, pure jets, radial component, \lean{Free} \\
-\lean{Factor} & \lean{U1Factor}, \lean{SUFactor}, \lean{Factor}, \lean{Factors} \\
-\lean{MatrixJets} & presentations by matrices; laws, faithfulness, freeness, factor \\
-\lean{U1}, \lean{SU/Algebra}, \lean{SU/Basic} & the packages \lean{u1}, \lean{su n} as instances \\
-\lean{Prod}, \lean{OfFactors} & products and lists of factors \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\paragraph{Choices.} A datum is passed as an argument, never inferred: the carriers do not determine it (a truncated jet group has the same carriers), so there is nothing canonical for instance search to find. The layer imports nothing above it, so that the gauge data of a model can be read without the rest of the library.
+\paragraph{Interface.} A factor (\lean{U1Factor}, \lean{SUFactor}) is a compatible projection onto $U(1)$ or $SU(n)$; a model's charges are given factor by factor. The datum is passed explicitly, never inferred, and the layer imports nothing above it.
 \endgroup
 
 \section{What a model sees}
