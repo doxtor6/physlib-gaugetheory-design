@@ -55,16 +55,22 @@ One rule organises the folder: \textbf{every layer is parametrised by data and r
 \section{The layers}
 
 \begin{center}
-\begin{tikzpicture}[node distance=3mm and 8mm]
-  \node[box=78mm] (lgd) {\lean{LocalGaugeData/} \; the gauge datum, its laws, the packages $U(1)$, $SU(n)$, products, lists of factors, and the factors of a datum};
-  \node[box=37mm, below left=3mm and -38mm of lgd] (mf) {\lean{MatterField/} \; matter fields, their transformation laws, the covariant derivative, matrix representations and tables};
-  \node[box=37mm, below right=3mm and -38mm of lgd] (gb) {\lean{GaugeBoson/} \; the connection determined by the gauge datum, its coefficients, the field strength};
-  \node[box=78mm, below=17mm of lgd] (fd) {\lean{FieldData/} \; a finite indexed family of matter fields with multiplicities; restriction and sums along maps of index types; the generator space};
-  \node[box=78mm, below=of fd] (lfa) {\lean{LocalField/} \; $J(T)$: universal property, actions, star, functoriality in $T$, realizations, covariant derivatives, mass weight, invariants};
-  \node[box=78mm, below=of lfa] (lcfa) {\lean{LocalCovField/} \; the covariant subalgebra, on which jets act through $G_0$; classification by invariant reductions, family by family};
-  \draw[arr] (lgd) -- (mf); \draw[arr] (lgd) -- (gb);
-  \draw[arr] (mf) -- (fd); \draw[arr] (gb) -- (fd);
-  \draw[arr] (fd) -- (lfa); \draw[arr] (lfa) -- (lcfa);
+\begin{tikzpicture}[node distance=6mm]
+  \node[box=124mm] (lgd) {\textbf{\lean{LocalGaugeData/}}\\[1pt] the gauge datum and its laws; $U(1)$, $SU(n)$, products, lists of factors};
+  \node[box=58mm, minimum height=15mm, anchor=north west] (mf) at ([yshift=-7mm]lgd.south west)
+    {\textbf{\lean{MatterField/}}\\[1pt] matter fields and their laws; covariant derivative; matrix representations and tables};
+  \node[box=58mm, minimum height=15mm, anchor=north east] (gb) at ([yshift=-7mm]lgd.south east)
+    {\textbf{\lean{GaugeBoson/}}\\[1pt] the connection, determined by the gauge datum; its coefficients; field strength};
+  \node[box=124mm, anchor=north] (fd) at ([yshift=-7mm]mf.south -| lgd.south)
+    {\textbf{\lean{FieldData/}}\\[1pt] a finite indexed family of matter fields with multiplicities; the connection added implicitly};
+  \node[box=124mm, below=of fd] (lfa) {\textbf{\lean{LocalField/}}\\[1pt] the algebra $J(T)$: universal property, actions, star, functoriality, realizations, mass weight};
+  \node[box=124mm, below=of lfa] (lcfa) {\textbf{\lean{LocalCovField/}}\\[1pt] the covariant subalgebra, on which jets act through $G_0$; classification by invariant reductions};
+  \draw[arr] (lgd.south -| mf.north) -- (mf.north);
+  \draw[arr] (lgd.south -| gb.north) -- (gb.north);
+  \draw[arr] (mf.south) -- (fd.north -| mf.south);
+  \draw[arr] (gb.south) -- (fd.north -| gb.south);
+  \draw[arr] (fd) -- (lfa);
+  \draw[arr] (lfa) -- (lcfa);
 \end{tikzpicture}
 \end{center}
 
