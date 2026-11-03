@@ -13,7 +13,7 @@ Comments are welcome as issues or pull requests here, or on the Zulip thread of
 
 | file | what it is |
 | --- | --- |
-| [`notes/GaugeTheory-design.tex`](notes/GaugeTheory-design.tex), [`.pdf`](notes/GaugeTheory-design.pdf) | The intended five-layer structure of the library, the rules it follows, open questions, and the distance from the current tree. |
+| [`notes/GaugeTheory-design.tex`](notes/GaugeTheory-design.tex), [`.pdf`](notes/GaugeTheory-design.pdf) | The intended five-layer structure of the library, the rules it follows, open questions, and the status of the current tree. |
 
 ## Building
 

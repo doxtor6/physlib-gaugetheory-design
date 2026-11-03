@@ -63,8 +63,8 @@ One rule organises the folder: \textbf{every layer is parametrised by data and r
     {\textbf{\lean{GaugeBoson/}}\\[1pt] the connection, determined by the gauge datum; its coefficients; field strength};
   \node[box=124mm, anchor=north] (fd) at ([yshift=-7mm]mf.south -| lgd.south)
     {\textbf{\lean{FieldData/}}\\[1pt] a finite indexed family of matter fields with multiplicities; the connection added implicitly};
-  \node[box=124mm, below=of fd] (lfa) {\textbf{\lean{LocalField/}}\\[1pt] the algebra $J(T)$: universal property, actions, star, functoriality, realizations, mass weight};
-  \node[box=124mm, below=of lfa] (lcfa) {\textbf{\lean{LocalCovField/}}\\[1pt] the covariant subalgebra, on which jets act through $G_0$; classification by invariant reductions};
+  \node[box=124mm, below=of fd] (lfa) {\textbf{\lean{LocalFieldAlgebra/}}\\[1pt] the algebra $J(T)$: universal property, actions, star, functoriality, realizations, mass weight};
+  \node[box=124mm, below=of lfa] (lcfa) {\textbf{\lean{LocalCovFieldAlgebra/}}\\[1pt] the covariant subalgebra, on which jets act through $G_0$; classification by invariant reductions};
   \draw[arr] (lgd.south -| mf.north) -- (mf.north);
   \draw[arr] (lgd.south -| gb.north) -- (gb.north);
   \draw[arr] (mf.south) -- (fd.north -| mf.south);
@@ -83,7 +83,7 @@ inductive Field (T : FieldData jets) | matter (i : T.Idx) | gauge
 \end{lstlisting}
 which lives in \lean{Type}, has decidable equality, and whose laws dispatch to the matter and connection laws. A closed type \lean{Species | matter M | gauge} at the level of data was tried (PR \#2011) and dropped: every general lemma split into the two cases, the matter case only restated existing results, and it did not say how a theory contains its gauge field.
 \item \textbf{One algebra tower.} The pure gauge theory is $J$ of the field data with no matter, and the sectors of $J(T)$ are images of sub-families. Nothing is built twice and identified afterwards.
-\item \textbf{One classification mechanism.} The relation \lean{ReducesInvariantsTo} of \lean{Mathematics/InvariantReduction} is general mathematics and stays there. The algebra layer supplies what every theory needs to use it: the gauge and Lorentz actions as one family indexed by $G_0\sqcup SL(2,\mathbb C)$, the reduction of a factor's invariance to that family, and the stability of symbol ranges. A classification theorem for one index law (a colour trace, an isospin contraction, a Lorentz scalar) is stated as a reduction modulo an arbitrary stable submodule, so it can be applied inside any larger expression and to any extension.
+\item \textbf{One classification mechanism.} The relation \lean{ReducesInvariantsTo} of \lean{Mathematics/InvariantReduction} is general mathematics and stays there. The algebra layer supplies what every theory needs to use it: the gauge and Lorentz actions as one family indexed by $G_0\sqcup SL(2,\mathbb C)$, the reduction of a factor's invariance to that family, and the stability of symbol ranges, all in \lean{LocalCovFieldAlgebra/}. A classification theorem for one index law (a colour trace, an isospin contraction, a Lorentz scalar) is stated as a reduction modulo an arbitrary stable submodule, so it can be applied inside any larger expression and to any extension.
 \end{itemize}
 
 Each layer is described below by its datum, what it derives and its interface.
@@ -137,7 +137,9 @@ Two alternatives were considered and rejected as the definition:
 \end{itemize}
 Fields with an affine shift other than the connection (Stückelberg, axion), if ever needed, get their own family with an affine datum.
 
-\subsection{\texttt{LocalField/} and \texttt{LocalCovField/}: the algebras}
+\subsection{\texttt{LocalFieldAlgebra/} and \texttt{LocalCovFieldAlgebra/}: the algebras}
+
+Each directory is named after the algebra it defines, \lean{LocalFieldAlgebra} ($J(T)$) and \lean{LocalCovFieldAlgebra}; today they are \lean{LocalField/} and \lean{LocalCovField/}.
 
 $J(T)$ is built from the per-field generator spaces, bosonic generators commuting and fermionic ones anticommuting, with the connection's generators complexified. Its universal property says that every compatible assignment of the symbols to an associative complex algebra $B$ extends to exactly one algebra map; $B$ need not be commutative and the map need not be injective. Gauge and Lorentz actions, ordinary derivatives and mass weight are defined on generators. The current sectors use only the totals per category (fermion, gauge, scalar); sectors by sub-families follow from maps of index types.
 
@@ -168,50 +170,60 @@ Items 1--3 belong with the field-data work; item 4 is the realization PR; item 5
 \section{Decisions and open questions}
 
 \begin{center}\small
-\begin{tabular}{@{}p{45mm}p{82mm}p{22mm}@{}}
+\begin{tabular}{@{}p{40mm}p{80mm}>{\raggedright\arraybackslash}p{29mm}@{}}
 \toprule
 question & answer & status \\
 \midrule
-One notion for matter and the connection, or two? & Two. A common interface exists only once the model is fixed (\lean{Field T}). & agreed, 2 Nov \\
+One notion for matter and the connection, or two? & Two. A common interface exists only once the model is fixed (\lean{Field T}). & agreed, 2--3 Nov \\
 Connection explicit in the field data or implicit? & Implicit, from the gauge datum. Sums are disjoint unions of matter families. & agreed, 2 Nov \\
-Shape of the field data & The indexed families of \lean{GaugeFieldData}; merged fields only as a derived view. & proposed \\
-What happens to PR \#2011 & Keep the coefficient extraction; move the gauge-field composition laws and the component form of the gauge law to \lean{GaugeBoson/GaugeCoeff}; drop the species type. & proposed \\
-Real or complex tower & One complex tower with a star, real objects being its star-fixed parts; the real connection algebra stays until step 4 of \S6. & proposed \\
+Shape of the field data & The indexed families of \lean{GaugeFieldData}; merged fields only as a derived view. The alternative of one bosonic and one fermionic field merged by \lean{MatterField.prod} (Joseph, 2 Nov) is what the coming \lean{FieldData} PR is expected to try; \S3.3 lists what it must answer. & open, PR pending \\
+What happens to PR \#2011 & Drop the species type (agreed 3 Nov). Keep the coefficient extraction; move the gauge-field composition laws and the component form of the gauge law to \lean{GaugeBoson/GaugeCoeff}. & type dropped; the rest proposed \\
+Real or complex tower & One complex tower with a star, real objects being its star-fixed parts; the real connection algebra stays until step 5 of \S6. & proposed \\
 Sectors & By maps of index types. A grading by sub-families waits until a proof needs it. & proposed \\
 Conjugates and reality & Reality flag, generated conjugates and a star, as in \S3.4. & open \\
 Compatibility conditions & Fields of \lean{MatterField} or hypotheses on the field data. & open \\
-Names & \lean{MatterField}, \lean{FieldData} (renaming \lean{GaugeFieldData}), \lean{Field T}. & proposed \\
+Names & \lean{FieldData} for the field data (agreed 3 Nov); directory \lean{LocalFieldAlgebra/} for $J(T)$ (agreed 3 Nov); \lean{LocalCovFieldAlgebra/} by the same rule and \lean{Field T}. & partly agreed \\
+Order of work & Clean up and move layer by layer in the order of \S3; once \lean{FieldData} is in, the later layers proceed in parallel. & agreed, 3 Nov \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 The two open questions should be settled before the realization of symbols in $J(T)$.
 
-\section{Distance from the current tree}
+\section{Status of the tree}
+
+Measured on Physlib \lean{master} on 3 November 2026 (directories under \lean{PhyslibAlpha/ClassicalFieldTheory/GaugeTheory/} unless stated). There are no \lean{sorry}s.
 
 \begin{center}\small
-\begin{tabular}{@{}p{66mm}p{88mm}@{}}
+\begin{tabular}{@{}p{40mm}p{42mm}p{72mm}@{}}
 \toprule
-current & intended \\
+layer & now & against the design \\
 \midrule
-\lean{LocalGaugeData/} & the same (done) \\
-\lean{MatterField/}, \lean{GaugeBoson/Basic}, \lean{GaugeBoson/GaugeCoeff} & the same; the gauge-field results of PR \#2011 join \lean{GaugeCoeff} \\
-\lean{GaugeBoson/LocalGauge/}, \lean{GaugeBoson/LocalGaugeCov/} (the real connection tower, about 3300 lines) & the two algebra layers at the field data with no matter \\
-\lean{GaugeFieldData/} & \lean{FieldData/}, the same structure, with \lean{Field T} \\
-\lean{LocalField/}, \lean{LocalCovField/} & the same, sectors derived from maps of index types \\
-\lean{Mathematics/InvariantReduction}; \lean{StandardModel/InvariantReduction} & the same; the combined family, the factor reductions and the range stabilities move into \lean{LocalCovField/}, stated for \lean{ofFactors} \\
+\lean{LocalGaugeData/} & 19 files, about 6\,500 lines & Done and imports nothing above it; only \lean{Basic} is in \lean{Physlib/}. About 3\,100 lines of $SU(n)$ invariant theory (\lean{SU/Invariants}, \lean{GellMann}, \lean{Adjoint}, \lean{TensorSpecies}) belong to the factor reductions of \lean{LocalCovFieldAlgebra/}. \\
+\lean{MatterField/} & 15 files, about 5\,400 lines & Structure with statistic, \lean{TransformsIn}, covariant derivative, \lean{MatrixRep} and tables, \lean{Prod}, \lean{Pi}; conjugate components present. No reality flag; compatibility conditions are separate definitions. \\
+\lean{GaugeBoson/} & 17 files, about 6\,900 lines & \lean{Basic} (216 lines) as intended. The rest is the real connection tower: \lean{LocalGauge} 2\,800, \lean{LocalGaugeCov} 600, \lean{Realization} 3\,200. \lean{GaugeCoeff} exists only in PR \#2011. \\
+\lean{GaugeFieldData/} & 7 files, about 2\,000 lines & Already the indexed field data, gauge field implicit. To be renamed \lean{FieldData}; no \lean{Field T}. \\
+\lean{LocalField/} & 13 files, about 4\,600 lines & $J(T)$ with universal property, actions, derivatives, mass weight, realizations, covariant derivatives including conjugates. Sectors only by category totals, built by hand; no functoriality in the index types; no star. \\
+\lean{LocalCovField/} & 6 files, about 2\,200 lines & Covariant subalgebra, sectors, realizations. \\
+\lean{Mathematics/InvariantReduction}, \lean{StandardModel/InvariantReduction} & 537 and 309 lines & The mechanism exists; the combined family and the factor reductions are still stated for the Standard Model only. \\
+Model card (\lean{Particles/StandardModel/Basic}) & 148 lines & The intended interface, used only by \lean{Model/Consistency} and \lean{Model/LeptonDoublet}. \\
 \bottomrule
 \end{tabular}
 \end{center}
 
+The headline result, \lean{mem_massWeightSubmoduleLE_eight_and_invariant_iff_lagrangian} in \lean{StandardModel/JetAlgebra/AlgebraRealization}, classifies the invariants of mass weight at most eight. It is proved, but on the hand-built field data (\lean{StandardModel.fieldData}, fifteen fermion species and the Higgs) rather than on the card, and it classifies invariant polynomials with no quotient by total derivatives, so the word \emph{lagrangian} in its name says more than it proves. The Standard Model directory is about 55\,000 lines.
+
+So the remaining work before the deadline is mostly migration: restating that result through the card and the generic field data, not new proofs.
+
 In order:
 \begin{enumerate}
 \item \textbf{Done.} \lean{LocalGaugeData/} imports nothing above it (PR \#1415 and the \lean{LocalGaugeData/} PRs).
-\item \textbf{Field data.} Rework PR \#2011 as in \S5, add \lean{Field T}, settle conjugates and compatibility, then realize the symbols in $J(T)$.
-\item \textbf{Sectors and the card.} Derive the sectors from maps of index types, and migrate the Standard Model from the hand-built field data to the card.
+\item \textbf{Clean-up layer by layer} (agreed 3 November). \lean{LocalGaugeData/} moves to \lean{Physlib/} except the $SU(n)$ invariant files, which move to the classification. Then \lean{MatterField/} and \lean{GaugeBoson/Basic} with \lean{GaugeCoeff}.
+\item \textbf{Field data.} The \lean{FieldData} PR (Nathaneal, in preparation), \lean{Field T}, conjugates and compatibility, then the realization of the symbols in $J(T)$. After this the later layers proceed in parallel.
+\item \textbf{Sectors and the card.} Rename the algebra directories, derive the sectors from maps of index types, and migrate the Standard Model from the hand-built field data to the card.
 \item \textbf{After the deadline.} Replace the real connection tower by the field data with no matter, last, because the Standard Model gauge-sector classification is built on it; add reality and a total-derivative derivation commuting with the gauge action, so that invariants can be classified modulo total derivatives.
 \end{enumerate}
-Steps 2 and 3 are the target for early December.
+Steps 2--4 are the target for early December, with the end of the semester as the hard deadline.
 
 \section{Progress}
 
@@ -223,6 +235,10 @@ Not done: \lean{U1.lean} and \lean{SU/Basic.lean} still define their structure m
 
 \subsection*{Matter fields and species (PRs \#1989 and \#2011, October--November 2026)}
 
-PR \#1989 (merged 30 October) added \lean{statistic : FieldStatistic} to \lean{MatterField} and requires the fermionic and bosonic entries of the field data to match; merging fields now needs a common statistic as well as a common mass weight. PR \#2011 (opened 1 November) introduced a species type with case-defined coefficients and gauge, weight, derivative and Lorentz laws, and moved the coefficients into \lean{MatterField/RepCoeff} and \lean{GaugeBoson/GaugeCoeff}. After discussion on 2 November the species type is dropped and the PR is to be reworked as in \S5.
+PR \#1989 (merged 30 October) added \lean{statistic : FieldStatistic} to \lean{MatterField} and requires the fermionic and bosonic entries of the field data to match; merging fields now needs a common statistic as well as a common mass weight. PR \#2011 (opened 1 November) introduced a species type with case-defined coefficients and gauge, weight, derivative and Lorentz laws, and moved the coefficients into \lean{MatterField/RepCoeff} and \lean{GaugeBoson/GaugeCoeff}. After discussion on 2 November the species type was dropped, confirmed on 3 November, and the PR is to be reworked as in \S5.
+
+\subsection*{Naming and plan (3 November 2026)}
+
+The thread agreed to name the field data \lean{FieldData}; to name the directory holding $J(T)$ after its algebra, \lean{LocalFieldAlgebra/}, as Joseph suggested;, and to clean up the existing code layer by layer in the order of the diagram. Nathaneal is preparing the \lean{FieldData} PR.
 
 \end{document}
