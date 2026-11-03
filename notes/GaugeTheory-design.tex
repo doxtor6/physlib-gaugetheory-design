@@ -5,12 +5,12 @@
 \setmathfont{texgyrepagella-math.otf}
 \setmonofont{DejaVuSansMono.ttf}[Scale=0.8,BoldFont=DejaVuSansMono-Bold.ttf]
 \usepackage[margin=2.2cm]{geometry}
-\usepackage{booktabs,array,enumitem,xcolor,url,microtype,tikz,slashed,listings}
+\usepackage{booktabs,array,enumitem,url,microtype,tikz,listings}
 \lstset{basicstyle=\ttfamily\footnotesize, escapechar=@, breaklines=true, columns=fullflexible,
-  keepspaces=true, frame=single, rulecolor=\color{gray!50}, xleftmargin=4pt, framexleftmargin=4pt,
-  commentstyle=\color{gray}, morecomment=[l]{--}, extendedchars=false, aboveskip=6pt, belowskip=6pt}
-\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc,shapes.geometric}
-\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+  keepspaces=true, frame=single, xleftmargin=4pt, framexleftmargin=4pt,
+  morecomment=[l]{--}, extendedchars=false, aboveskip=6pt, belowskip=6pt}
+\usetikzlibrary{positioning,arrows.meta}
+\usepackage[hidelinks]{hyperref}
 \makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\-}\makeatother
 \newcommand{\lean}[1]{{\footnotesize\ttfamily\nolinkurl{#1}}}
 \newcommand{\file}[1]{{\small\ttfamily\nolinkurl{#1}}}
@@ -18,108 +18,70 @@
 \setlength{\parskip}{4pt}
 \emergencystretch=2em
 
-\definecolor{hand}{RGB}{214,120,60}
-\definecolor{table}{RGB}{50,120,190}
-\definecolor{gen}{RGB}{70,150,90}
-\definecolor{plan}{RGB}{140,90,170}
-
 \tikzset{
   box/.style={draw, rounded corners=2pt, align=center, font=\small, inner sep=4pt, minimum height=7mm, text width=#1},
   box/.default=30mm,
-  handb/.style={box=#1, draw=hand, fill=hand!8},
-  handb/.default=30mm,
-  tableb/.style={box=#1, draw=table, fill=table!8},
-  tableb/.default=30mm,
-  genb/.style={box=#1, draw=gen, fill=gen!8},
-  genb/.default=30mm,
-  planb/.style={box=#1, draw=plan, fill=plan!8, dashed},
-  planb/.default=30mm,
   arr/.style={-{Latex[length=2mm]}, thick},
-  eq/.style={{Bar}-{Bar}, thick, densely dotted},
-  lab/.style={font=\scriptsize, fill=white, inner sep=1pt},
-  grp/.style={draw, rounded corners=4pt, inner sep=6pt, font=\footnotesize\bfseries, dashed, gray!70},
 }
 
 \title{The design of \texttt{GaugeTheory/}}
 \author{Jinzheng Li}
-\date{Draft for discussion, 22 September 2026; revised 26 September and 3 November 2026}
+\date{First draft 22 September 2026; rewritten 3 November 2026}
 
-\newcommand{\new}[1]{\textcolor{blue!65!black}{#1}}
-\definecolor{decided}{RGB}{0,120,120}
-\newcommand{\dec}[1]{\textcolor{decided}{#1}}
 \begin{document}
 \maketitle
 
-\noindent\new{Text in blue was added after the first draft: sums of contents (Nathaneal, 23 September) and invariant reduction (24 September).}
-
-\noindent\dec{Text in teal records the decisions of 2--3 November 2026: there is no species type, the connection is implicit in the gauge datum, and a theory's field data is an indexed family of matter fields. Where it contradicts older text, the teal text wins; the older text is kept so the reasoning stays visible. The code now lives in \lean{PhyslibAlpha/ClassicalFieldTheory/GaugeTheory/}.}
-
-\begingroup\color{decided}
-\section*{Decisions of November 2026}
-
-\paragraph{Agreed} (Zulip, 2 November, Joseph and Nathaneal; PR \#2011 to be reworked accordingly).
-\begin{itemize}
-\item \textbf{No species type.} Matter fields and the gauge field stay separate notions: \lean{MatterField} (which carries its statistic since PR \#1989) for matter, and the connection determined by \lean{LocalGaugeData}. A closed type \lean{Species | matter M | gauge} was tried in PR \#2011; every general lemma split into the two cases, the matter case only re-stated existing results, and it did not say how a theory's field content contains a gauge field. This answers Q1: two notions.
-\item \textbf{The connection is implicit.} A theory lists its matter fields only; the gauge field comes from the gauge datum. This answers Q3. Sums of field contents become disjoint unions of matter families, so the gluing along the connection is no longer needed, and the pure gauge theory is the field data with no matter.
-\item \textbf{The layers} are \lean{LocalGaugeData} $\to$ \lean{MatterField} $\parallel$ \lean{GaugeBoson} $\to$ \lean{FieldData} $\to$ \lean{LocalFieldAlgebra} $\to$ \lean{LocalCovFieldAlgebra}.
-\end{itemize}
-
-\paragraph{Proposed here} (to be agreed).
-\begin{itemize}
-\item \textbf{\lean{FieldData} is the indexed family that exists today}, \lean{GaugeFieldData}: index types \lean{FermionSpecies} and \lean{BosonSpecies} with \lean{Fintype} and \lean{DecidableEq}, a \lean{MatterField} for each index, the gauge field implicit. It may be renamed \lean{FieldData}. The table on the model card compiles into it.
-\item \textbf{Merged fields are a derived view.} The single fermionic and bosonic fields built with \lean{MatterField.prod}/\lean{pi} are not the definition: they force one mass weight per statistic, forget the names and generations (two copies of one multiplet, as in a two-Higgs-doublet model, cannot be told apart), have no empty case, and no lemma yet shows the compatibility conditions survive them. The common-weight hypothesis is supplied where the merged field is used. A \lean{Multiset MatterField} is rejected because \lean{MatterField} contains a type and has no decidable equality.
-\item \textbf{A common interface only after the model is fixed}: \lean{inductive Field T | matter (i : T.Idx) | gauge}, in \lean{Type} with decidable equality, whose laws dispatch to \lean{TransformsIn} for matter and to a connection law for the gauge field. The gauge-field results of PR \#2011 (composition laws of \lean{adjointTransport} and \lean{mcBosonCoeff}, the component form of the gauge law) move to \lean{GaugeBoson/GaugeCoeff}.
-\item \textbf{Fields with an affine shift other than the connection} (Stückelberg, axion), if ever needed, get their own family with an affine datum, rather than redesigning matter now.
-\end{itemize}
-
-\paragraph{Open; to settle before the realization PR.}
-\begin{itemize}
-\item \textbf{Conjugates and reality.} The conjugate components already sit in \lean{JetComponentSpace}. Decide whether each matter field carries a real/complex flag, conjugate symbols are generated and never listed, and a star structure on $J(T)$ swaps a symbol with its conjugate and fixes real fields and the connection.
-\item \textbf{Compatibility.} Whether \lean{GaugeLorentzCompatible} and \lean{PureJetsActTrivially} become fields of \lean{MatterField}, discharged once for matrix representations, or remain hypotheses on the field data.
-\end{itemize}
-
-\paragraph{Scope and deadline.} Target early December 2026, hard deadline the end of the semester. The main theorem classifies gauge- and Lorentz-invariant \emph{polynomials} of weight at most 8: complex, with no reality condition and no quotient by total derivatives or equations of motion, so it contains terms such as $\partial^2(H^\dagger H)$ and $\operatorname{tr}F\tilde F$; it should be named accordingly rather than ``the Lagrangian''. A total-derivative derivation, reality, and the replacement of the real connection tower (step 4 of \S6) come after the deadline.
-\endgroup
-
 \section{Purpose}
 
-\lean{Physlib/ClassicalFieldTheory/GaugeTheory/} is the symbolic framework for the local content of a gauge theory: the algebra in which a Lagrangian is written, the gauge and Lorentz actions on it, and the invariants of a given mass dimension. Fields enter only through their jets at one point, the formal symbols $\partial_s\psi_\alpha$.
+\lean{PhyslibAlpha/ClassicalFieldTheory/GaugeTheory/} is the symbolic framework for the local content of a gauge theory: the algebra in which a Lagrangian is written, the gauge and Lorentz actions on it, and the invariants of a given mass dimension. Fields enter only through their jets at one point, the formal symbols $\partial_s\psi_\alpha$.
 
-One rule organises the folder: \textbf{every layer takes a datum and returns constructions and theorems; a concrete theory contributes only its data.} The Standard Model is a list of gauge factors and a table of fields, and everything else about it is inherited. This note records the intended structure. The present tree differs from it (\S6), and the open choices are in \S5.
+One rule organises the folder: \textbf{every layer is parametrised by data and returns constructions and theorems; a concrete theory contributes only its data.} A model supplies a gauge datum and a table of matter fields, and everything else about it is inherited.
+
+\paragraph{The target theorem.} For the Standard Model, the gauge- and Lorentz-invariant elements of the local field algebra of mass weight at most 8 (mass dimension at most 4) are spanned by an explicit list. This is a classification of invariant \emph{polynomials}: it is over $\mathbb C$, imposes no reality condition, and takes no quotient by total derivatives or equations of motion. It therefore contains terms such as $\partial^2(H^\dagger H)$ and $\operatorname{tr}F\tilde F$, and it should be named as a statement about invariants, not as ``the Lagrangian''. Reality and the quotient by total derivatives are later steps (\S6).
+
+\paragraph{Deadline.} Early December 2026, with the end of the semester as the hard deadline.
 
 \section{The idea}
 
 \begin{itemize}
 \item \textbf{Gauge jets.} A gauge transformation is its jet $U$ in a jet group $G_J$: value $\mathrm{eval}\,U\in G_0$, Lie algebra $\mathfrak g_J$, derivatives, adjoint action, Maurer--Cartan form $\omega_\mu(U)=i(\partial_\mu U)U^{-1}$. These maps and their laws are the gauge datum; nothing downstream knows which group it is.
-\item \textbf{Species.} A species is a finite-dimensional $V$ with a Lorentz representation, a parity, a mass weight, and an affine action of $G_J$ on $\mathtt{JetRing}\otimes V$, a linear part $\ell$ and a translation $t$ with $t(UV)=t(U)+\ell(U)\,t(V)$. Matter has $t=0$ and $\ell$ fibrewise, generated by an infinitesimal action of $\mathfrak g$. The connection has $\ell=\mathrm{Ad}$, $t=\omega$. \dec{Superseded: there is no species type. The affine description remains the right way to think about the two cases, and the cocycle law is a lemma about the connection's coefficients, but matter (\lean{MatterField}) and the connection (from the gauge datum) are separate notions.}
-\item \textbf{The algebra.} A content $T$ is a finite family of species containing the connection. \dec{Now: the field data $T$ is a finite indexed family of matter fields; the connection is added from the gauge datum.} $J(T)$ is the free graded-commutative algebra on the symbols of all species. Every action is defined on generators and extended by the universal property; the translation part gives the inhomogeneous term. Reality is a star structure. An inclusion of contents $S\subseteq T$ gives an injective equivariant map $J(S)\to J(T)$ with a retraction: sectors are its images, and the pure gauge theory is the connection-only content. \new{Contents also add: $F+G$ is the union of the two families glued along the connection, and $J(F+G)$ is the graded tensor product of $J(F)$ and $J(G)$ over the connection-only algebra, graded by which summands a word touches; both actions preserve the grading.}
-\item \textbf{Invariants.} Mass weight is twice the mass dimension (derivative 2, scalar 2, Weyl fermion 3, connection 2); the dimension-four Lagrangian is the gauge and Lorentz invariants of weight at most 8. On the covariant subalgebra jets act through $G_0$, so classification is ordinary invariant theory, sector by sector. \new{It is done one family of terms at a time: a \emph{reduction} $\mathrm{ReducesInvariantsTo}\;\sigma\;V\;W$ says that for every $\sigma$-stable submodule $S$, an invariant of $V\sqcup S$ lies in $W\sqcup S$. Reductions compose, combine over finite joins and transport along maps of index sets, and the family $\sigma$ is any family of linear maps, so gauge and Lorentz invariance are one invariance for the disjoint union of the two groups. A classification of one family is a reduction of it to the span of its allowed contractions, proved in the quotient by the remainder. \textcolor{red}{When the pure and mixed pieces span the relevant weight space and satisfy the stability and reduction hypotheses, their classifications combine. Extending a classified theory requires the new-field and mixed classifications; only if the added sector is already classified does just the mixed calculation remain.}}
+\item \textbf{Matter fields.} A matter field is a finite-dimensional complex space $V$ with a Lorentz representation, an action of $G_J$ on $\mathtt{JetRing}\otimes V$ that is fibrewise and generated by an infinitesimal action of $\mathfrak g$, a mass weight and a statistic (bosonic or fermionic). Its symbols transform linearly.
+\item \textbf{The gauge field.} The connection is not listed by a theory: it is determined by the gauge datum. Its symbols transform affinely, by the adjoint action plus the Maurer--Cartan form, and the translation part satisfies the cocycle law $t(UV)=t(U)+\mathrm{Ad}_U\,t(V)$. Matter and the connection are two separate notions; the affine picture describes how they differ but is not a common type.
+\item \textbf{Field data.} A theory's field data is a finite indexed family of matter fields, each with a multiplicity (its number of generations). The connection is added from the gauge datum, so the pure gauge theory is the field data with no matter, and the sum of two theories is the disjoint union of their matter families.
+\item \textbf{The algebra.} $J(T)$ is the free graded-commutative algebra on the symbols of the matter fields of $T$, their conjugates, and the connection. Every action is defined on generators and extended by the universal property; the translation part of the connection gives the inhomogeneous term. A map of index types gives an equivariant map of algebras, and sectors are its images.
+\item \textbf{Invariants.} Mass weight is twice the mass dimension (derivative 2, scalar 2, Weyl fermion 3, connection 2). On the covariant subalgebra jets act through $G_0$, so classification is ordinary invariant theory. It is done one family of terms at a time: a \emph{reduction} $\mathrm{ReducesInvariantsTo}\;\sigma\;V\;W$ says that for every $\sigma$-stable submodule $S$, an invariant of $V\sqcup S$ lies in $W\sqcup S$. Reductions compose, combine over finite joins and transport along maps of index sets, and $\sigma$ is any family of linear maps, so gauge and Lorentz invariance are one invariance for the disjoint union of the two groups.
 \end{itemize}
 
 \section{The layers}
 
 \begin{center}
 \begin{tikzpicture}[node distance=3mm and 8mm]
-  \node[genb=70mm] (lgd) {\lean{LocalGaugeData/} \; the gauge datum, its laws, the packages $U(1)$, $SU(n)$, products, lists of factors, and the factors of a datum};
-  \node[genb=70mm, below=of lgd] (sp) {\dec{\lean{MatterField/} $\parallel$ \lean{GaugeBoson/}} \; matter fields (with the covariant derivative, naming by matrix representations and tables) and the connection determined by the gauge datum (with the field strength); \dec{no species type}};
-  \node[genb=70mm, below=of sp] (fc) {\dec{\lean{FieldData/}} \; \dec{a finite indexed family of matter fields; the connection added from the gauge datum}; restriction to sub-families \new{and sums}; the generator space};
-  \node[genb=70mm, below=of fc] (lfa) {\lean{LocalFieldAlgebra/} \; $J(T)$: universal property, actions, star, functoriality in $T$, realizations, covariant derivatives, mass weight, invariants};
-  \node[genb=70mm, below=of lfa] (lcfa) {\lean{LocalCovFieldAlgebra/} \; the covariant subalgebra, on which jets act through $G_0$; \new{classification by invariant reductions, family by family}};
-  \draw[arr] (lgd) -- (sp); \draw[arr] (sp) -- (fc); \draw[arr] (fc) -- (lfa); \draw[arr] (lfa) -- (lcfa);
+  \node[box=78mm] (lgd) {\lean{LocalGaugeData/} \; the gauge datum, its laws, the packages $U(1)$, $SU(n)$, products, lists of factors, and the factors of a datum};
+  \node[box=37mm, below left=3mm and -38mm of lgd] (mf) {\lean{MatterField/} \; matter fields, their transformation laws, the covariant derivative, matrix representations and tables};
+  \node[box=37mm, below right=3mm and -38mm of lgd] (gb) {\lean{GaugeBoson/} \; the connection determined by the gauge datum, its coefficients, the field strength};
+  \node[box=78mm, below=17mm of lgd] (fd) {\lean{FieldData/} \; a finite indexed family of matter fields with multiplicities; restriction and sums along maps of index types; the generator space};
+  \node[box=78mm, below=of fd] (lfa) {\lean{LocalField/} \; $J(T)$: universal property, actions, star, functoriality in $T$, realizations, covariant derivatives, mass weight, invariants};
+  \node[box=78mm, below=of lfa] (lcfa) {\lean{LocalCovField/} \; the covariant subalgebra, on which jets act through $G_0$; classification by invariant reductions, family by family};
+  \draw[arr] (lgd) -- (mf); \draw[arr] (lgd) -- (gb);
+  \draw[arr] (mf) -- (fd); \draw[arr] (gb) -- (fd);
+  \draw[arr] (fd) -- (lfa); \draw[arr] (lfa) -- (lcfa);
 \end{tikzpicture}
 \end{center}
 
-Imports go down the line only. Each layer exposes one structure as its datum, \lean{LocalGaugeData}, \lean{Species}, \lean{FieldContent}, and proves everything for an arbitrary instance. Two points \new{(now three)} decide the shape:
+Imports go down the line only. Three points decide the shape:
 
 \begin{itemize}
-\item \textbf{One species notion.} Matter fields and the connection are both species, so the jet component space, the transformation law of a symbol family and the realization notion are stated once. The factors of a gauge datum belong to the gauge layer, not to matter. \dec{Superseded: two notions. Laws are stated once per notion, and a common statement over all fields is available only for a fixed model, through \lean{Field T}.}
-\item \textbf{One algebra tower.} The pure gauge theory is $J$ of the connection-only content, and the sectors of $J(T)$ are images of sub-contents. Nothing is built twice and identified afterwards.
-\item \new{\textbf{One classification mechanism.} The relation \lean{ReducesInvariantsTo} of \lean{Mathematics/InvariantReduction} is general mathematics and stays there. The algebra layer supplies what every theory needs to use it: the gauge and Lorentz actions as one family indexed by $G_0\sqcup SL(2,\mathbb C)$, the reduction of a factor's invariance to that family, and the stability of symbol ranges. A classification theorem for one index law (a colour trace, an isospin contraction, a Lorentz scalar) is stated as a reduction modulo an arbitrary stable submodule, so it can be applied inside any larger expression and to any extension.}
+\item \textbf{Two field notions, one interface per model.} Matter fields and the connection are separate: each states its own transformation laws once, and the matter laws are stated for an arbitrary \lean{MatterField}. A statement over all fields of a theory uses a type built once the model is fixed,
+\begin{lstlisting}
+inductive Field (T : FieldData jets) | matter (i : T.Idx) | gauge
+\end{lstlisting}
+which lives in \lean{Type}, has decidable equality, and whose laws dispatch to the matter and connection laws. A closed type \lean{Species | matter M | gauge} at the level of data was tried (PR \#2011) and dropped: every general lemma split into the two cases, the matter case only restated existing results, and it did not say how a theory contains its gauge field.
+\item \textbf{One algebra tower.} The pure gauge theory is $J$ of the field data with no matter, and the sectors of $J(T)$ are images of sub-families. Nothing is built twice and identified afterwards.
+\item \textbf{One classification mechanism.} The relation \lean{ReducesInvariantsTo} of \lean{Mathematics/InvariantReduction} is general mathematics and stays there. The algebra layer supplies what every theory needs to use it: the gauge and Lorentz actions as one family indexed by $G_0\sqcup SL(2,\mathbb C)$, the reduction of a factor's invariance to that family, and the stability of symbol ranges. A classification theorem for one index law (a colour trace, an isospin contraction, a Lorentz scalar) is stated as a reduction modulo an arbitrary stable submodule, so it can be applied inside any larger expression and to any extension.
 \end{itemize}
 
-Each layer is described below by its datum, what it derives, its instances and its interface.
+Each layer is described below by its datum, what it derives and its interface.
 
-\begingroup\color{blue!65!black}
 \subsection{\texttt{LocalGaugeData/}: the gauge datum}
 
 \paragraph{The question it answers.} A Lagrangian density at a point $x$ depends on the fields and finitely many of their derivatives at $x$. So when we ask whether it is gauge invariant, a gauge transformation $g(x)$ matters only through its Taylor series at that point, its \emph{jet}. This layer describes these jets and nothing else. It does not mention fields or Lagrangians; every later layer takes its datum as input.
@@ -144,40 +106,42 @@ It also has the rules these satisfy in the example, such as $\omega(UV)=\omega(U
 
 \paragraph{Two extra properties.} The rules do not say that $G_J$ really consists of Taylor series, so two properties are stated separately. \lean{Faithful}: a jet is determined by its Taylor coefficients. \lean{Free}: every choice of Taylor coefficients comes from some jet. \lean{Free} is what later shows that the gauge field enters an invariant only through its field strength: gauge jets are rich enough to remove every other combination of derivatives of $A_\mu$.
 
-\paragraph{Where concrete groups come from.} A \emph{matrix presentation} (\lean{MatrixJets}) says that the four types sit inside matrices and every map is the matrix one. From it the rules, \lean{Faithful} and a test for \lean{Free} are proved once, so $SU(n)$ (\lean{su n}) and $U(1)$ (\lean{u1}, as $1\times1$ matrices) are obtained by filling in a presentation. Products (\lean{prod}) and a list of factors (\lean{ofFactors}) then give any group such as $SU(3)\times SU(2)\times U(1)$, written \lean{[.SU 3, .SU 2, .U1]}.
+\paragraph{Where concrete groups come from.} A \emph{matrix presentation} (\lean{MatrixJets}) says that the four types sit inside matrices and every map is the matrix one. From it the rules and \lean{Faithful} are proved once, and \lean{Free} is reduced to three conditions on the carriers, so $SU(n)$ (\lean{su n}) and $U(1)$ (\lean{u1}, as $1\times1$ matrices) are obtained by filling in a presentation. Products (\lean{prod}) and a list of factors (\lean{ofFactors}) then give any group such as $SU(3)\times SU(2)\times U(1)$, written \lean{[.SU 3, .SU 2, .U1]}.
 
 \paragraph{Factors and morphisms.} Charges are given one factor at a time, for example ``a doublet of $SU(2)$ with hypercharge $-3$''. A \emph{factor} (\lean{U1Factor}, \lean{SUFactor}) records how the gauge jets project onto one $U(1)$ or $SU(n)$. A \emph{morphism} (\lean{Hom}) is a map between two data that respects all the maps above, and a factor of the target pulls back along it. The projections of a product are morphisms, which is how the factors of $SU(3)\times SU(2)\times U(1)$ are obtained from those of its pieces.
 
 \paragraph{Conventions.} The datum is always passed explicitly, never found by instance search, because the four types do not determine it. The layer imports nothing from the layers above it.
-\endgroup
 
-\begingroup\color{red}
-\subsection*{Species: requirements from the classification}
-\noindent\dec{These requirements now apply to \lean{MatterField} and \lean{FieldData}, since there is no species type.}
+\subsection{\texttt{MatterField/} and \texttt{GaugeBoson/}: the two kinds of field}
 
-\paragraph{Fields and symbols.} Keep the value-space representation distinct from the dual action on field symbols, including their conjugates. Parity and mass weight belong to the species; bases and particular fundamental, conjugate or adjoint representations are inputs to specific classifiers, not requirements on every species.
+\paragraph{Matter.} \lean{MatterField jets} has a complex value space $V$ (free and finite), a Lorentz representation, the jet action \lean{repJet} on $\mathtt{JetRing}\otimes V$, required to be fibrewise and generated by the infinitesimal action \lean{repAlgebra}, a mass weight and a statistic (PR \#1989). Matrix representations and tables (\lean{MatrixRep}) produce matter fields from charges one factor at a time and prove the infinitesimal-action condition once for all of them. The coefficients by which a jet moves the derivatives of a field live in \lean{RepCoeff}, separate from the covariant derivative, so that field data can use them without importing the algebra.
 
-\paragraph{Compatibility.} Keep the conditions behind covariance visible. The current \lean{GaugeLorentzCompatible} supplies Lorentz stability of covariant expressions; \lean{PureJetsActTrivially} makes their jet action factor through evaluation. Whether these become consequences of the new species definition or remain hypotheses must be explicit. The converse statement, that jet-invariant expressions lie in the covariant algebra, uses gauge freeness and is a separate result.
+\paragraph{The connection.} The value space is $\mathrm{CoVector}\otimes\mathfrak g$, real. The coefficients are the adjoint transport and the Maurer--Cartan coefficients (\lean{GaugeCoeff}), with their composition laws: the linear part composes by a Leibniz sum, and the translation part is a cocycle.
 
-\paragraph{What the assembly needs.} Each sector supplies a reduction, containment of its classified span in the source, and pointwise fixedness of that span. These combine without sector independence. Covariance and weight laws should be derived from species data and exposed to realizations. The established classification spans complex formal expressions; it imposes no reality condition and takes no quotient by total derivatives or equations of motion.
+\paragraph{Requirements from the classification.} Keep the value-space representation distinct from the dual action on field symbols, including their conjugates. Parity and mass weight belong to the field; bases and particular fundamental, conjugate or adjoint representations are inputs to specific classifiers, not requirements on every field. Keep the conditions behind covariance visible: \lean{GaugeLorentzCompatible} supplies Lorentz stability of covariant expressions, and \lean{PureJetsActTrivially} makes their jet action factor through evaluation. Whether these become fields of \lean{MatterField}, discharged once for matrix representations, or remain hypotheses on the field data is open (\S5). The converse, that jet-invariant expressions lie in the covariant algebra, uses \lean{Free} and is a separate result.
 
-\paragraph{Migration boundary.} Begin the SM realization migration once the species-to-field-content interface, the table compiler and their algebra/realization interfaces are stable. Not every species theorem must be finished first. The shared reduction mathematics is independent of this packaging; duplicate SM interfaces can be removed as their consumers migrate.
+\subsection{\texttt{FieldData/}: what a theory contains}
 
-\endgroup
+The field data is the indexed family that exists today as \lean{GaugeFieldData}: index types \lean{FermionSpecies} and \lean{BosonSpecies} with \lean{Fintype} and \lean{DecidableEq}, a \lean{MatterField} for each index with the matching statistic, and the gauge field implicit. It may be renamed \lean{FieldData}. The model card's table, which lists named fields with their generation counts, compiles into it.
+
+Two alternatives were considered and rejected as the definition:
+\begin{itemize}
+\item \textbf{One bosonic and one fermionic field}, merged by \lean{MatterField.prod} or \lean{pi}. Merging forces one mass weight per statistic, forgets the names and generations (two copies of one multiplet, as in a two-Higgs-doublet model, cannot be told apart), has no empty case, and no lemma yet shows the compatibility conditions survive it. The merged fields remain available as a derived view, with the common-weight hypothesis supplied where they are used.
+\item \textbf{A multiset of matter fields.} \lean{MatterField} contains a type and has no decidable equality, so counting and \lean{decide} fail, and identical multiplets collapse into one entry.
+\end{itemize}
+Fields with an affine shift other than the connection (Stückelberg, axion), if ever needed, get their own family with an affine datum.
+
+\subsection{\texttt{LocalField/} and \texttt{LocalCovField/}: the algebras}
+
+$J(T)$ is built from the per-field generator spaces, bosonic generators commuting and fermionic ones anticommuting, with the connection's generators complexified. Its universal property says that every compatible assignment of the symbols to an associative complex algebra $B$ extends to exactly one algebra map; $B$ need not be commutative and the map need not be injective. Gauge and Lorentz actions, ordinary derivatives and mass weight are defined on generators. The current sectors use only the totals per category (fermion, gauge, scalar); sectors by sub-families follow from maps of index types.
+
+The covariant subalgebra is generated by the matter fields, their symmetrised covariant derivatives and the covariant derivatives of the field strength; on it the jets act through $G_0$. Each sector of the classification supplies a reduction, containment of its classified span in the source, and pointwise fixedness of that span; these combine without sector independence.
+
+\paragraph{Conjugates and reality.} The conjugate components already sit in each field's jet component space. Still to decide (\S5): a real/complex flag per matter field, conjugate symbols generated and never listed, and a star structure on $J(T)$ that swaps a symbol with its conjugate and fixes real fields and the connection. A real Lagrangian is then a star-fixed invariant.
 
 \section{What a model sees}
 
-A model is a card and nothing else:
-\begin{lstlisting}
-abbrev gauge : List FactorSpec := [.SU 3, .SU 2, .U1]
-abbrev leptonDoublet : SpeciesData factors := (.L, .singlet, .fund, -3)
-...
-noncomputable def content : FieldContent gaugeData := table.toFieldContent
-\end{lstlisting}
-Species of the model are abbreviations of the value spaces the card produces, and theorems are stated in the card and the generic vocabulary alone, for example that the gauge and Lorentz invariants of \lean{content} of weight at most 4 are spanned by $1$ and $H^\dagger H$.
-
-\begingroup\color{decided}
-\paragraph{The card today} (\lean{PhyslibAlpha/Particles/StandardModel/Basic.lean}) already has this shape:
+A model is a card and nothing else. The Standard Model card (\lean{PhyslibAlpha/Particles/StandardModel/Basic.lean}) reads:
 \begin{lstlisting}
 abbrev gauge : List FactorSpec := [.SU 3, .SU 2, .U1]
 abbrev leptonDoublet : MatterFieldData factors := (.L, .singlet, .fund, -3)
@@ -185,28 +149,37 @@ abbrev higgs : MatterFieldData factors := (.scalar, .singlet, .fund, 3)
 inductive Fields | q | l | u | d | e | H
 def table : FieldData factors Fields | .q => (3, quarkDoublet) | ...
 \end{lstlisting}
-The table compiles into the indexed field data, keeping names and generation counts; the gauge field is never listed. This is the interface of model-building tools such as SARAH and Sym2Int, and it is the target.
-
-\paragraph{Still missing for that interface.}
+The fields of the model are abbreviations of the value spaces the card produces, and theorems are stated in the card and the generic vocabulary alone. This is the interface of model-building tools such as SARAH and Sym2Int: the gauge group and a list of matter fields with generations, the gauge fields never listed. To complete it:
 \begin{enumerate}
-\item Real fields: a real-scalar label or a reality flag (\lean{LorentzLabel} has only \lean{L}, \lean{R}, \lean{scalar}, all complex).
-\item A gauge field and field strength for each gauge factor, obtained from the factor projections, with names the card can use.
-\item Conjugates generated automatically: a star structure and a user-facing conjugation.
-\item Writing a term from the card's symbols and checking its invariance (the realization PR).
-\item Symmetry breaking (vacuum expectation values, mass eigenstates) and global or discrete symmetries, including the flavour group acting on generations; after the deadline.
+\item real fields: a real-scalar label or a reality flag (\lean{LorentzLabel} has only \lean{L}, \lean{R}, \lean{scalar}, all complex);
+\item a gauge field and a field strength for each gauge factor, obtained from the factor projections, with names the card can use;
+\item conjugates generated automatically, through the star structure and a user-facing conjugation;
+\item writing a term from the card's symbols and checking its invariance (the realization of symbols in $J(T)$);
+\item symmetry breaking (vacuum expectation values, mass eigenstates; pulling back along a \lean{Hom} already gives the branching of each field) and global or discrete symmetries, including the flavour group acting on generations.
 \end{enumerate}
-Items 1--3 belong with the \lean{FieldData} work.
-\endgroup
+Items 1--3 belong with the field-data work; item 4 is the realization PR; item 5 comes after the deadline.
 
-\section{Questions for discussion}
+\section{Decisions and open questions}
 
-\begin{enumerate}
-\item \textbf{One species structure or two.} The affine law costs a translation field that is zero for all matter. Is the uniformity worth it, or should \lean{MatterField} and the connection stay separate with the symbol-family law stated twice? \dec{Decided: two (2 November). A common interface exists only for a fixed model.}
-\item \textbf{Real or complex tower.} The connection's algebra is real today; the single tower is complex with a star. Does anything downstream need the real algebra as an object? \dec{Proposed: one complex tower with a star, real objects being its star-fixed parts; the real connection algebra stays until step 4, after the deadline.}
-\item \textbf{The connection in the content.} Explicit member of the family (restriction becomes ordinary) or implicit through the gauge datum (as today)? \new{Explicit forces a sum $F+G$ to be glued along the connection; implicit allows a plain disjoint union.} \dec{Decided: implicit (2 November).}
-\item \textbf{Sectors by functoriality.} Restriction along $S\subseteq T$ fixes how species are indexed. Is that acceptable to the existing sector proofs? \new{Images of sub-contents give the ``at most $S$'' subalgebras, but those proofs use the ``exactly $S$'' pieces, and a sum has a mixed part in neither image. Should the grading by sub-families be part of this layer?} \dec{Proposed: functoriality along maps of index types. The present sectors use only the totals per category (fermion, gauge, scalar), so the grading by sub-families can wait until a proof needs it.}
-\item \textbf{Names and order of work.} \lean{Species}, \lean{FieldContent}, \lean{content} against the current names; and which of the steps below, if any, should precede the remaining Standard Model migration? \dec{Proposed: \lean{MatterField}, \lean{FieldData} (renaming \lean{GaugeFieldData}), \lean{Field T}. The Standard Model migration onto the card comes before step 4.}
-\end{enumerate}
+\begin{center}\small
+\begin{tabular}{@{}p{45mm}p{82mm}p{22mm}@{}}
+\toprule
+question & answer & status \\
+\midrule
+One notion for matter and the connection, or two? & Two. A common interface exists only once the model is fixed (\lean{Field T}). & agreed, 2 Nov \\
+Connection explicit in the field data or implicit? & Implicit, from the gauge datum. Sums are disjoint unions of matter families. & agreed, 2 Nov \\
+Shape of the field data & The indexed families of \lean{GaugeFieldData}; merged fields only as a derived view. & proposed \\
+What happens to PR \#2011 & Keep the coefficient extraction; move the gauge-field composition laws and the component form of the gauge law to \lean{GaugeBoson/GaugeCoeff}; drop the species type. & proposed \\
+Real or complex tower & One complex tower with a star, real objects being its star-fixed parts; the real connection algebra stays until step 4 of \S6. & proposed \\
+Sectors & By maps of index types. A grading by sub-families waits until a proof needs it. & proposed \\
+Conjugates and reality & Reality flag, generated conjugates and a star, as in \S3.4. & open \\
+Compatibility conditions & Fields of \lean{MatterField} or hypotheses on the field data. & open \\
+Names & \lean{MatterField}, \lean{FieldData} (renaming \lean{GaugeFieldData}), \lean{Field T}. & proposed \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The two open questions should be settled before the realization of symbols in $J(T)$.
 
 \section{Distance from the current tree}
 
@@ -215,57 +188,35 @@ Items 1--3 belong with the \lean{FieldData} work.
 \toprule
 current & intended \\
 \midrule
-\lean{LocalGaugeData/} & the same, plus the factor types now in \lean{MatterField/MatrixRep/} \\
-\lean{MatterField/}; \lean{GaugeBoson/Basic}, \lean{GaugeBoson/Realization/} & \lean{Species/} \\
-\lean{GaugeBoson/LocalGaugeFieldAlgebra/}, \lean{GaugeBoson/LocalGaugeCovFieldAlgebra/} & the two algebra layers at the connection-only content \\
-\lean{GaugeFieldData/} & \lean{FieldContent/}, with the connection explicit \\
-\lean{LocalFieldAlgebra/}, \lean{LocalCovFieldAlgebra/} & the same, sectors derived from functoriality \\
-\new{\lean{Mathematics/InvariantReduction}; \lean{StandardModel/InvariantReduction}} & \new{the same; the combined family, the factor reductions and the range stabilities move into \lean{LocalCovFieldAlgebra/}, stated for \lean{ofFactors}} \\
+\lean{LocalGaugeData/} & the same (done) \\
+\lean{MatterField/}, \lean{GaugeBoson/Basic}, \lean{GaugeBoson/GaugeCoeff} & the same; the gauge-field results of PR \#2011 join \lean{GaugeCoeff} \\
+\lean{GaugeBoson/LocalGauge/}, \lean{GaugeBoson/LocalGaugeCov/} (the real connection tower, about 3300 lines) & the two algebra layers at the field data with no matter \\
+\lean{GaugeFieldData/} & \lean{FieldData/}, the same structure, with \lean{Field T} \\
+\lean{LocalField/}, \lean{LocalCovField/} & the same, sectors derived from maps of index types \\
+\lean{Mathematics/InvariantReduction}; \lean{StandardModel/InvariantReduction} & the same; the combined family, the factor reductions and the range stabilities move into \lean{LocalCovField/}, stated for \lean{ofFactors} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-In the order they should be removed:
+In order:
 \begin{enumerate}
-\item \lean{LocalGaugeData/} imports matter (the factor types, and \lean{TransformsIn}, \lean{InfinitesimalAction} importing the covariant derivative). Move the factor types down and the two files into the species layer.
-\item Matter and the connection have differently shaped APIs, \lean{TransformsIn} for matter and \lean{GaugeAlgebraRealization} for the connection. Introduce the species structure with both as instances.
-\item Sectors are built by hand and the gauge sector identified with a separate algebra (four \lean{GaugeSector} files). Prove functoriality and derive them.
-\item The connection has its own real algebra tower of about 3300 lines. Replace it by the connection-only content, last, because the Standard Model gauge-sector classification is built on it.
+\item \textbf{Done.} \lean{LocalGaugeData/} imports nothing above it (PR \#1415 and the \lean{LocalGaugeData/} PRs).
+\item \textbf{Field data.} Rework PR \#2011 as in \S5, add \lean{Field T}, settle conjugates and compatibility, then realize the symbols in $J(T)$.
+\item \textbf{Sectors and the card.} Derive the sectors from maps of index types, and migrate the Standard Model from the hand-built field data to the card.
+\item \textbf{After the deadline.} Replace the real connection tower by the field data with no matter, last, because the Standard Model gauge-sector classification is built on it; add reality and a total-derivative derivation commuting with the gauge action, so that invariants can be classified modulo total derivatives.
 \end{enumerate}
-Steps 1 and 2 are cleanup; 3 and 4 change shared conventions and need their owners.
-
-\begingroup\color{decided}
-\paragraph{Revised (3 November).} The paths are now under \lean{PhyslibAlpha/ClassicalFieldTheory/GaugeTheory/}: the real connection tower is \lean{GaugeBoson/LocalGauge/} and \lean{GaugeBoson/LocalGaugeCov/}, and the two algebra layers are \lean{LocalField/} and \lean{LocalCovField/}. In the table, \lean{MatterField/} and \lean{GaugeBoson/} stay as they are rather than becoming \lean{Species/}, and \lean{GaugeFieldData/} becomes \lean{FieldData/} with the connection implicit. The steps become:
-\begin{enumerate}
-\item Done (PR \#1415 and the \lean{LocalGaugeData/} PRs).
-\item Replaced: no species type. Move the gauge-field results of PR \#2011 to \lean{GaugeBoson/GaugeCoeff}, add \lean{Field T} for a fixed model, settle conjugates and compatibility, then realize the symbols in $J(T)$.
-\item Sectors by functoriality along maps of index types; migrate the Standard Model onto the card.
-\item After the deadline.
-\end{enumerate}
-\endgroup
+Steps 2 and 3 are the target for early December.
 
 \section{Progress}
 
-\new{Kept up to date as the layers are reorganised. Each entry says what was changed and what the layer now is, so that a reviewer can check the commits against the intent above.}
+\subsection*{\texttt{LocalGaugeData/} (September 2026, PR \#1415)}
 
-\subsection*{\new{\lean{LocalGaugeData/} (24 September 2026, 9 commits for PR \#1415)}}
+The layer imported matter in two ways; both are gone. The factor types \lean{U1Factor}, \lean{SUFactor}, \lean{Factor}, \lean{Factors} moved down into \lean{Factor.lean}, since their fields mention only gauge jets, the gauge algebra and the jet ring. \lean{TransformsIn} and \lean{InfinitesimalAction}, statements about a representation on $\mathtt{JetRing}\otimes V$, moved up to \lean{MatterField/}. The duplication between \lean{U1.lean} and \lean{SU/Basic.lean} was removed by \lean{MatrixJets.lean}, a presentation of gauge jets by matrices of jets from which the laws, faithfulness and the canonical \lean{SU}-type factor are proved once. \lean{MatrixJets.free} (Joseph, 25 September) reduces \lean{Free} to three conditions on the carriers, and the Standard Model freeness proof became an instance, about 400 lines shorter. The layer is eleven files, about 3\,600 lines, importing nothing outside itself: \lean{Basic}, \lean{AdjointCoeff}, \lean{MaurerCartan}, \lean{Truncation}, \lean{Factor}, \lean{MatrixJets}, \lean{SU/Algebra}, \lean{SU/Basic}, \lean{U1}, \lean{Prod}, \lean{OfFactors}.
 
-\new{\emph{Changed.} The layer imported matter in two ways; both are gone. The factor types \lean{U1Factor}, \lean{SUFactor}, \lean{Factor}, \lean{Factors} moved down from the matrix-representation and table files into a new \lean{Factor.lean}, since their fields mention only gauge jets, the gauge algebra and the jet ring. \lean{TransformsIn} and \lean{InfinitesimalAction}, which are statements about a representation on $\mathtt{JetRing}\otimes V$, moved up to \lean{MatterField/}. The carriers of a list of factors were renamed from \lean{Factors.G} to \lean{OfFactors.G}, so that \lean{Factors} names only the type. The duplication between \lean{U1.lean} and \lean{SU/Basic.lean} was removed by a new \lean{MatrixJets.lean}: a presentation of gauge jets by matrices of jets (injective maps of the four carriers into $\kappa\times\kappa$ matrices, and what each structure map is in matrices), from which the laws of \lean{LocalGaugeData}, faithfulness and the canonical \lean{SU}-type factor are proved once; the matrix identities over the jet ring it needs went to \lean{Relativity/JetRing/Matrix}. \lean{su n} and \lean{u1} are now instances, \lean{u1} reading a scalar as a $1\times1$ matrix. Eight lemmas referenced nowhere, a stale TODO and a helper definition were removed, and the TODO on the recursive carriers was replaced by the reason for the recursion.}
+Not done: \lean{U1.lean} and \lean{SU/Basic.lean} still define their structure maps by hand. Defining the carriers as subtypes of matrices would change the types the Standard Model files unfold to, so it waits for the hand-built Standard Model code to go.
 
-\new{\emph{Now.} Eleven files, about 3\,500 lines, importing nothing outside the layer. \lean{Basic} (the structure, its laws, the iterated derivative, \lean{Faithful}); \lean{AdjointCoeff} (the Taylor--Leibniz theorem); \lean{MaurerCartan} (the symmetrised form and what determines the form); \lean{Truncation} (the filtration, pure jets, \lean{Free}); \lean{Factor} (the factor types); \lean{MatrixJets} (the presentation by matrices); \lean{SU/Algebra}, \lean{SU/Basic}, \lean{U1} (the concrete packages as instances); \lean{Prod} (products and lifting factors); \lean{OfFactors} (a list of factor symbols, its carriers and canonical factors).}
+\subsection*{Matter fields and species (PRs \#1989 and \#2011, October--November 2026)}
 
-\new{\emph{Follow-up (Joseph, 25 September).} Freeness is now also proved once for a matrix presentation: \lean{MatrixJets.free} reduces \lean{Free} to three conditions on the carriers (Lie algebra jets contain every matrix with Taylor data in $\mathfrak g$, they are hermitian, and the gauge jets contain the unitary Euler transport of every Lie algebra jet), using the Euler-transport results on matrices of jets. The Standard Model freeness proof becomes an instance and shrank by about 400 lines. The layer is now about 3\,600 lines, still importing nothing outside itself.}
-
-\new{\emph{Not done.} \lean{U1.lean} and \lean{SU/Basic.lean} still each define their structure maps by hand (about 150 lines each); a further step would define the carriers themselves as subtypes of matrices and take the maps from \lean{MatrixJets}, but that changes the carrier types the Standard Model files unfold to, so it waits for the hand-built Standard Model code to go.}
-
-\begingroup\color{decided}
-\subsection*{Matter fields and species (PRs \#1989 and \#2011, 29 October--3 November 2026)}
-
-\emph{Changed.} PR \#1989 (merged 30 October) added \lean{statistic : FieldStatistic} to \lean{MatterField}, and requires the fermionic and bosonic entries of the field data to have the matching statistic; merging fields with \lean{prod} or \lean{pi} now needs a common statistic as well as a common mass weight. PR \#2011 (opened 1 November) introduced \lean{inductive Species | matter M | gauge} with case-defined coefficients and gauge, weight, derivative and Lorentz laws, and moved the representation and gauge-field coefficients into \lean{MatterField/RepCoeff} and \lean{GaugeBoson/GaugeCoeff}.
-
-\emph{Decided.} After discussion on 2 November the species type is dropped (see the decisions at the start). PR \#2011 is to be reworked: the coefficient extraction and the gauge-field composition laws are kept, the species type and its case-split API are not.
-
-\emph{Now.} The field data is \lean{GaugeFieldData}, two indexed families of matter fields with the connection implicit; nothing depends on the species type.
-\endgroup
+PR \#1989 (merged 30 October) added \lean{statistic : FieldStatistic} to \lean{MatterField} and requires the fermionic and bosonic entries of the field data to match; merging fields now needs a common statistic as well as a common mass weight. PR \#2011 (opened 1 November) introduced a species type with case-defined coefficients and gauge, weight, derivative and Lorentz laws, and moved the coefficients into \lean{MatterField/RepCoeff} and \lean{GaugeBoson/GaugeCoeff}. After discussion on 2 November the species type is dropped and the PR is to be reworked as in \S5.
 
 \end{document}
